@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Dünya</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      overflow: hidden;
+    }
+    .hidden { display: none; }
+
+    /* Giriş ekranı */
+    #auth {
+      background: rgba(0,0,0,0.85);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,255,255,0.5);
+      text-align: center;
+      width: 350px;
+    }
+    #auth input {
+      display: block;
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+      font-weight: bold;
+    }
+    .neon {
+      background: linear-gradient(90deg,#7f00ff,#00ffff);
+      color: white;
+      box-shadow: 0 0 10px #00ffff, 0 0 20px #7f00ff;
+    }
+
+    /* Ana içerik */
+    #main {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 90%;
+    }
+    .clock {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .menu {
+      margin-top: 20px;
+    }
+    .menu button {
+      margin: 5px;
+    }
+    .section {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      width: 80%;
+      text-align: center;
+    }
+    .dark { background: #121212; color: white; }
+    .light { background: #f5f5f5; color: black; }
+  </style>
+</head>
+<body>
+
+<!-- Giriş ekranı -->
+<div id="auth">
+  <h2>🌌 Neon Dünya</h2>
+  <p>Lütfen giriş yapın veya kayıt olun</p>
+  <input type="email" id="email" placeholder="E-posta">
+  <input type="text" id="username" placeholder="Kullanıcı adı">
+  <input type="password" id="password" placeholder="Şifre">
+  <button class="btn neon" onclick="registerUser()">Kayıt Ol</button>
+  <button class="btn" onclick="loginUser()">Giriş Yap</button>
+  <p id="loginMsg"></p>
+  <p>İletişim: <a href="mailto:halisvevo5@gmail.com">halisvevo5@gmail.com</a></p>
+</div>
+
+<!-- Ana içerik -->
+<div id="main">
+  <div class="topbar">
+    <div class="clock" id="clock"></div>
+    <div>
+      <button class="btn" onclick="toggleTheme()">🌗 Tema</button>
+      <button class="btn" onclick="logout()">🚪 Çıkış</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Profil</h3>
+    <p id="profileInfo"></p>
+    <p>Puan: <span id="points">0</span></p>
+  </div>
+
+  <div class="section">
+    <h3>YouTube Müzik</h3>
+    <input type="text" id="ytUrl" placeholder="YouTube URL">
+    <button class="btn neon" onclick="playMusic()">Oynat</button>
+    <div id="player"></div>
+  </div>
+
+  <div class="section">
+    <h3>Oyunlar</h3>
+    <button class="btn neon" onclick="playSlot()">🎰 Slot</button>
+    <button class="btn neon" onclick="playBlackjack()">🃏 Blackjack</button>
+    <p id="gameResult"></p>
+  </div>
+</div>
+
+<script>
+  let USERS = JSON.parse(localStorage.getItem("users")||"{}");
+  let CURRENT = null;
+
+  function saveUsers(obj){ localStorage.setItem("users", JSON.stringify(obj)); }
+  function loadUsers(){ return JSON.parse(localStorage.getItem("users")||"{}"); }
+
+  function registerUser(){
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const name  = document.getElementById('username').value.trim();
+    const pass  = document.getElementById('password').value;
+
+    if(!email || !pass){
+      document.getElementById('loginMsg').innerText='Lütfen e-posta ve parola girin';
+      return;
+    }
+    if(USERS[email]){
+      document.getElementById('loginMsg').innerText='Bu e-posta zaten kayıtlı';
+      return;
+    }
+
+    USERS[email] = {
+      pw: btoa(pass),
+      display: name || email.split('@')[0],
+      points: 0
+    };
+    saveUsers(USERS);
+
+    document.getElementById('loginMsg').style.color = 'lime';
+    document.getElementById('loginMsg').innerText='Kayıt başarılı — giriş yapabilirsiniz';
+  }
+
+  function loginUser(){
+    USERS = loadUsers();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const username = (document.getElementById("username")?.value || '').trim();
+    const pass = document.getElementById("password").value || '';
+    const msgEl = document.getElementById('loginMsg');
+
+    if (!email || !pass) {
+      msgEl.style.color = 'red';
+      msgEl.innerText = 'Lütfen e-posta ve parola girin.';
+      return;
+    }
+
+    if(USERS[email] && atob(USERS[email].pw) === pass){
+      if(username && USERS[email].display !== username){
+        USERS[email].display = username;
+        saveUsers(USERS);
+      }
+      CURRENT = email;
+      msgEl.style.color = 'lime';
+      msgEl.innerText = 'Giriş başarılı — yönlendiriliyorsunuz...';
+      setTimeout(()=> openMain(), 700);
+      return;
+    }
+
+    msgEl.style.color = 'red';
+    msgEl.innerText = 'Geçersiz bilgiler, tekrar deneyin.';
+  }
+
+  function openMain(){
+    document.getElementById('auth').style.display="none";
+    document.getElementById('main').style.display="flex";
+    document.getElementById('profileInfo').innerText = USERS[CURRENT].display;
+    document.getElementById('points').innerText = USERS[CURRENT].points;
+  }
+
+  function logout(){
+    CURRENT = null;
+    document.getElementById('main').style.display="none";
+    document.getElementById('auth').style.display="block";
+  }
+
+  // Saat
+  setInterval(()=>{
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+  },1000);
+
+  // Tema
+  function toggleTheme(){
+    document.body.classList.toggle("light");
+    document.body.classList.toggle("dark");
+  }
+
+  // YouTube Müzik
+  function playMusic(){
+    const url = document.getElementById("ytUrl").value;
+    const idMatch = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if(idMatch){
+      const id = idMatch[1];
+      document.getElementById("player").innerHTML =
+        `<iframe width="300" height="200" src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+      alert("Geçerli bir YouTube URL girin");
+    }
+  }
+
+  // Slot oyunu
+  function playSlot(){
+    const symbols = ["🍒","🍋","🍇","🔔","⭐"];
+    let res = [symbols[Math.floor(Math.random()*symbols.length)],
+               symbols[Math.floor(Math.random()*symbols.length)],
+               symbols[Math.floor(Math.random()*symbols.length)]];
+    document.getElementById("gameResult").innerText = res.join(" ");
+    if(res[0]===res[1] && res[1]===res[2]){
+      USERS[CURRENT].points += 10;
+      saveUsers(USERS);
+      document.getElementById("points").innerText = USERS[CURRENT].points;
+      document.getElementById("gameResult").innerText += " 🎉 Kazandın!";
+    }
+  }
+
+  // Basit blackjack (tek kart)
+  function playBlackjack(){
+    let player = Math.floor(Math.random()*11)+10;
+    let dealer = Math.floor(Math.random()*11)+10;
+    let txt = `Sen: ${player} — Dealer: ${dealer}`;
+    if(player>dealer){ txt+=" 🎉 Kazandın"; USERS[CURRENT].points+=5; }
+    else if(player<dealer){ txt+=" 😢 Kaybettin"; }
+    else { txt+=" 🤝 Berabere"; }
+    document.getElementById("gameResult").innerText = txt;
+    saveUsers(USERS);
+    document.getElementById("points").innerText = USERS[CURRENT].points;
+  }
+</script>
+
+</body>
+</html>
